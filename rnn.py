@@ -53,12 +53,17 @@ class HebbianRule(UpdatePolicy):
 
 class UpdateNetwork(nn.Module, UpdatePolicy):
     """ A small neural network used to update the network weights. """
-    def __init__(self): 
+    def __init__(self, input_size, hidden_size): 
         # TODO: Set up network that takes in firing history, and outputs weight change
-        pass
+        self.layer1 = make_parameter(np.ones(input_size, hidden_size))
+        self.layer2 = make_parameter(np.ones(hidden_size, 1))
+        self.activation = ReLU()
 
     def update(self, weight, firing_history):
-        pass
+        concat_history = torch.tensor(sum(firing_history, []) + [1])
+        y = self.activation(self.layer1 @ concat_history)
+
+        return self.activation(self.layer2 @ y)
 
 class RNNSimple(nn.Module):
     """ A simple recurrrent neural network """
