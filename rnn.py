@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import ReLU
+from torch.nn import Tanh
 from abc import ABC, abstractmethod
 
 input_dim = 2
@@ -54,10 +55,10 @@ class HebbianRule(UpdatePolicy):
 class UpdateNetwork(nn.Module, UpdatePolicy):
     """ A small neural network used to update the network weights. """
     def __init__(self, input_size, hidden_size): 
-        # TODO: Set up network that takes in firing history, and outputs weight change
-        self.layer1 = make_parameter(np.ones(input_size, hidden_size))
-        self.layer2 = make_parameter(np.ones(hidden_size, 1))
-        self.activation = ReLU()
+        super(UpdateNetwork, self).__init__()
+        self.layer1 = make_parameter(np.ones((hidden_size, input_size+1)))
+        self.layer2 = make_parameter(np.ones((hidden_size)))
+        self.activation = Tanh()
 
     def update(self, weight, firing_history):
         concat_history = torch.tensor(sum(firing_history, []) + [1])
@@ -90,11 +91,12 @@ class RNNSimple(nn.Module):
             intermediate.append(self.activation(self.recurrent_weights @ intermediate[-1] + self.recurrent_bias))
         return self.activation(self.output_weights @ intermediate[-1] + self.output_bias), intermediate
 
+T = 10
 c = RNNConfiguration()
-c.T = 2
+c.T = T
 m = RNNSimple(c)
 m.forward(torch.DoubleTensor([1,1]))[0].sum().backward()
-updater = HebbianRule(0.01)
+updater = UpdateNetwork(2 * (T+1), 6)
 
 data = [torch.tensor([0.1, 0.03], dtype=torch.double)]
 print("before:")
